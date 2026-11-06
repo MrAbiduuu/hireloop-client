@@ -68,7 +68,7 @@ function GlobeBackdrop() {
       <Image
         src={globe}
         alt=""
-        className="absolute top-[-315px] left-1/2 w-[640px] max-w-none -translate-x-1/2 sm:top-[-655px] sm:w-[1220px]"
+        className="absolute -top-78.75 left-1/2 w-160 max-w-none -translate-x-1/2 sm:-top-163.75 sm:w-305"
       />
       {/* fade the planet out into the page background */}
       <div className="absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-background via-background/70 to-transparent" />
