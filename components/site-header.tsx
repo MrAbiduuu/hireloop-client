@@ -11,25 +11,6 @@ const navLinks = [
   { href: "/pricing", label: "Pricing" },
 ]
 
-function LoopIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden="true"
-      className={cn("size-[1.1em]", className)}
-    >
-      <circle cx="12" cy="12" r="8" stroke="#ea580c" strokeWidth="5" />
-      <path
-        d="M12 4a8 8 0 0 1 8 8"
-        stroke="#fdba74"
-        strokeWidth="5"
-        strokeLinecap="round"
-      />
-    </svg>
-  )
-}
-
 export function Logo({ className }: { className?: string }) {
   return (
     <Link
