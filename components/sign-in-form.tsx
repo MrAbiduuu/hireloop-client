@@ -23,15 +23,15 @@ export function SignInForm() {
   const [error, setError] = useState<string | null>(null)
   const [rememberMe, setRememberMe] = useState(true)
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSignIn(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const form = new FormData(event.currentTarget)
+    const formData = new FormData(event.currentTarget)
 
     setPending(true)
     setError(null)
     const { error: authError } = await authClient.signIn.email({
-      email: String(form.get("email") ?? ""),
-      password: String(form.get("password") ?? ""),
+      email: String(formData.get("email") ?? ""),
+      password: String(formData.get("password") ?? ""),
       rememberMe,
     })
     setPending(false)
@@ -40,13 +40,13 @@ export function SignInForm() {
       setError(authError.message ?? "Unable to sign in. Please try again.")
       return
     }
-    // Success — TODO: route to the signed-in area (e.g. /dashboard)
+    console.log(formData)
     router.replace("/")
   }
 
   return (
     <div className="space-y-5">
-      <form onSubmit={onSubmit} className="space-y-4" noValidate>
+      <form onSubmit={handleSignIn} className="space-y-4" noValidate>
         <AuthField
           id="email"
           name="email"

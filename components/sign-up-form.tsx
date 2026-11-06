@@ -19,21 +19,23 @@ export function SignUpForm() {
   const [pending, setPending] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  async function handleSignUp(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    const form = new FormData(event.currentTarget)
+    const data = new FormData(event.currentTarget)
 
     setPending(true)
     setError(null)
     const { error: authError } = await authClient.signUp.email({
-      name: String(form.get("name") ?? ""),
-      email: String(form.get("email") ?? ""),
-      password: String(form.get("password") ?? ""),
+      name: String(data.get("name") ?? ""),
+      email: String(data.get("email") ?? ""),
+      password: String(data.get("password") ?? ""),
     })
     setPending(false)
 
     if (authError) {
-      setError(authError.message ?? "Unable to create your account. Please try again.")
+      setError(
+        authError.message ?? "Unable to create your account. Please try again."
+      )
       return
     }
     // Success — TODO: route to the signed-in area (e.g. /onboarding or /dashboard)
@@ -42,7 +44,7 @@ export function SignUpForm() {
 
   return (
     <div className="space-y-5">
-      <form onSubmit={onSubmit} className="space-y-4" noValidate>
+      <form onSubmit={handleSignUp} className="space-y-4" noValidate>
         <AuthField
           id="name"
           name="name"
