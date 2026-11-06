@@ -1,9 +1,12 @@
+"use client"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
 import logo from "@/app/images/logo.png"
+import { authClient, useSession } from "@/lib/auth-client"
 
 const navLinks = [
   { href: "/jobs", label: "Browse Jobs" },
@@ -38,6 +41,15 @@ function NavLink({ href, label }: { href: string; label: string }) {
 }
 
 export function SiteHeader() {
+  const router = useRouter()
+  const { data: session } = useSession()
+
+  async function handleSignOut() {
+    await authClient.signOut()
+    router.replace("/")
+    router.refresh()
+  }
+
   return (
     <header className="sticky top-0 z-50 w-full p-2 sm:p-4">
       <nav className="mx-auto flex h-14 max-w-6xl items-center justify-between rounded-xl border bg-card/80 px-4 shadow-sm backdrop-blur sm:h-16 sm:px-6">
@@ -49,22 +61,43 @@ export function SiteHeader() {
             <NavLink key={link.href} {...link} />
           ))}
           <div className="h-6 w-px bg-border" />
-          <Button
-            nativeButton={false}
-            variant="ghost"
-            className="text-indigo-500 hover:bg-indigo-500/10 hover:text-indigo-500"
-            render={<Link href="/signin" />}
-          >
-            Sign In
-          </Button>
-          <Button
-            nativeButton={false}
-            size="lg"
-            className="h-10 rounded-xl bg-indigo-500 px-5 text-white hover:bg-indigo-400"
-            render={<Link href="/signup" />}
-          >
-            Get Started
-          </Button>
+          {session?.user ? (
+            <>
+              <span className="text-sm text-muted-foreground">
+                Welcome,&nbsp;
+                <span className="font-medium text-foreground">
+                  {session.user.name}
+                </span>
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-xl border-border bg-card/40 hover:bg-muted"
+                onClick={handleSignOut}
+              >
+                Log Out
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button
+                nativeButton={false}
+                variant="ghost"
+                className="text-indigo-500 hover:bg-indigo-500/10 hover:text-indigo-500"
+                render={<Link href="/signin" />}
+              >
+                Sign In
+              </Button>
+              <Button
+                nativeButton={false}
+                size="lg"
+                className="h-10 rounded-xl bg-indigo-500 px-5 text-white hover:bg-indigo-400"
+                render={<Link href="/signup" />}
+              >
+                Get Started
+              </Button>
+            </>
+          )}
         </div>
 
         {/* Mobile nav */}
@@ -107,19 +140,39 @@ export function SiteHeader() {
               </Link>
             ))}
             <div className="my-1 h-px bg-border" />
-            <Link
-              href="/signin"
-              className="rounded-lg px-3 py-2 text-sm text-indigo-500 transition-colors hover:bg-indigo-500/10"
-            >
-              Sign In
-            </Link>
-            <Button
-              nativeButton={false}
-              className="mt-1 bg-indigo-500 text-white hover:bg-indigo-400"
-              render={<Link href="/signup" />}
-            >
-              Get Started
-            </Button>
+            {session?.user ? (
+              <>
+                <span className="rounded-lg px-3 py-2 text-sm text-muted-foreground">
+                  Welcome,{" "}
+                  <span className="font-medium text-foreground">
+                    {session.user.name}
+                  </span>
+                </span>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="rounded-lg px-3 py-2 text-left text-sm text-indigo-500 transition-colors hover:bg-indigo-500/10"
+                >
+                  Log Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/signin"
+                  className="rounded-lg px-3 py-2 text-sm text-indigo-500 transition-colors hover:bg-indigo-500/10"
+                >
+                  Sign In
+                </Link>
+                <Button
+                  nativeButton={false}
+                  className="mt-1 bg-indigo-500 text-white hover:bg-indigo-400"
+                  render={<Link href="/signup" />}
+                >
+                  Get Started
+                </Button>
+              </>
+            )}
           </div>
         </details>
       </nav>
