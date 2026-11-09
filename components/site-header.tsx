@@ -8,12 +8,6 @@ import Image from "next/image"
 import logo from "@/app/images/logo.png"
 import { authClient, useSession } from "@/lib/auth-client"
 
-const navLinks = [
-  { href: "/jobs", label: "Browse Jobs" },
-  { href: "/company", label: "Company" },
-  { href: "/pricing", label: "Pricing" },
-]
-
 export function Logo({ className }: { className?: string }) {
   return (
     <Link
@@ -43,6 +37,15 @@ function NavLink({ href, label }: { href: string; label: string }) {
 export function SiteHeader() {
   const router = useRouter()
   const { data: session } = useSession()
+  const navLinks = [
+    { href: "/jobs", label: "Browse Jobs" },
+    { href: "/company", label: "Company" },
+    { href: "/pricing", label: "Pricing" },
+    {
+      href: `/dashboard/${session?.user.role || "seeker"}`,
+      label: "Dashboard",
+    },
+  ] as const
 
   async function handleSignOut() {
     await authClient.signOut()
