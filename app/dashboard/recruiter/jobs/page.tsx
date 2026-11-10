@@ -6,7 +6,6 @@ import {
   Briefcase,
   CalendarIcon,
   MapPin,
-  MoreVertical,
   Pencil,
   Trash2,
   Users,
@@ -16,6 +15,7 @@ import { DeleteJob, GetJobs } from "@/lib/actions/jobs"
 import type { JobForm } from "@/app/dashboard/recruiter/jobs/new/page"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
+import { toast } from "@/components/ui/toast"
 import {
   Table,
   TableBody,
@@ -36,6 +36,7 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { ThreeDots } from "@/app/components/threeDots"
 
 const typeBadgeVariant = (type: string) =>
   type === "Full-time" ? "default" : "secondary"
@@ -71,6 +72,30 @@ const ManageJobsPage = () => {
   const [selectedJob, setSelectedJob] = useState<Job | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+
+  // Favourite (starred) jobs
+  const [favourites, setFavourites] = useState<Set<string>>(new Set())
+
+  function handleToggleFavourite(id: string) {
+    let added = false
+
+    setFavourites((prev) => {
+      const next = new Set(prev)
+
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+        added = true
+      }
+
+      return next
+    })
+
+    toast.add({
+      title: added ? "Added to Favourites" : "Removed from Favourites",
+    })
+  }
 
   async function fetchJobs() {
     try {
@@ -321,7 +346,7 @@ const ManageJobsPage = () => {
 
                     {/* Actions */}
                     <TableCell>
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-0.5">
                         <Link
                           href={`/dashboard/recruiter/jobs/new?edit=${job._id}`}
                           title="Edit"
@@ -330,22 +355,18 @@ const ManageJobsPage = () => {
                             size: "icon-sm",
                           })}
                         >
-                          <Pencil className="size-3.5" />
+                          <Pencil className="size-3.5 text-muted-foreground" />
                         </Link>
 
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          title="Delete"
-                          disabled={deleting}
-                          onClick={() => handleDeleteClick(job)}
-                        >
-                          <Trash2 className="size-3.5 text-destructive" />
-                        </Button>
-
-                        <Button variant="ghost" size="icon-sm" title="More">
-                          <MoreVertical className="size-3.5" />
-                        </Button>
+                        <ThreeDots
+                          favourite={favourites.has(job._id)}
+                          onToggleFavourite={() =>
+                            handleToggleFavourite(job._id)
+                          }
+                          onDelete={() => handleDeleteClick(job)}
+                          deleteDisabled={deleting}
+                          menuDisabled={deleting}
+                        />
                       </div>
                     </TableCell>
                   </TableRow>
