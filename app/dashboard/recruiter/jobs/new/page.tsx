@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
+import { useState } from "react"
 import { Building2, CalendarIcon, MapPin } from "lucide-react"
 
+import { PublishJobs } from "@/lib/actions/jobs"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -12,7 +14,7 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 
 // All form data in one flat object — easy to read, easy to send
-type JobForm = {
+export type JobForm = {
   jobTitle: string
   companyName: string
   jobCategory: string
@@ -84,6 +86,8 @@ function Section({
 const NewJobsPage = () => {
   const [form, setForm] = useState<JobForm>(initialForm)
   const [submitting, setSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   // single helper to update any field: set("jobTitle", value)
   const set = <K extends keyof JobForm>(key: K, value: JobForm[K]) =>
@@ -92,10 +96,15 @@ const NewJobsPage = () => {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
     setSubmitting(true)
+    setError(null)
     try {
-      // TODO: replace with your API call, e.g.
-      // await fetch("/api/jobs", { method: "POST", body: JSON.stringify(form) })
-      console.log("Job form data:", form)
+      await PublishJobs(form)
+      router.push("/dashboard/recruiter/jobs") // back to Manage Jobs on success
+    } catch (err) {
+      console.error(err)
+      setError(
+        "Failed to publish the job. Make sure the backend is running and try again."
+      )
     } finally {
       setSubmitting(false)
     }
@@ -113,24 +122,29 @@ const NewJobsPage = () => {
             <span className="mx-1.5">/</span>
             <span className="text-foreground">Create New Listing</span>
           </p>
-          <h1 className="text-2xl font-bold tracking-tight">
-            Post a New Job
-          </h1>
+          <h1 className="text-2xl font-bold tracking-tight">Post a New Job</h1>
           <p className="text-sm text-muted-foreground">
             Fill in the position specifications to attract qualified talent
             across our network.
           </p>
         </div>
-        <Button size="lg" disabled={submitting} form="new-job-form" type="submit">
+        <Button
+          size="lg"
+          disabled={submitting}
+          form="new-job-form"
+          type="submit"
+        >
           {submitting ? "Publishing..." : "Publish Job →"}
         </Button>
       </div>
 
-      <form
-        id="new-job-form"
-        onSubmit={handleSubmit}
-        className="space-y-6"
-      >
+      {error && (
+        <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
+      )}
+
+      <form id="new-job-form" onSubmit={handleSubmit} className="space-y-6">
         {/* 1. Basic Information */}
         <Section number={1} title="Basic Information">
           <div className="space-y-1.5">
@@ -336,7 +350,9 @@ const NewJobsPage = () => {
               id="qualifications"
               rows={4}
               className="bg-input/40"
-              placeholder={"• 3+ years of experience with React, TypeScript...\n• Solid understanding of DOM performance..."}
+              placeholder={
+                "• 3+ years of experience with React, TypeScript...\n• Solid understanding of DOM performance..."
+              }
               value={form.qualifications}
               onChange={(e) => set("qualifications", e.target.value)}
               required
