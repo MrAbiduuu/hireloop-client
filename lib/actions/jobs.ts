@@ -23,3 +23,33 @@ export const PublishJobs = async (data: JobForm) => {
 
   return res.json()
 }
+
+export const GetJobs = async (): Promise<JobForm[]> => {
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}/jobs`, { cache: "no-store" })
+  } catch {
+    throw new Error(`Cannot reach backend at ${BASE_URL}/jobs`)
+  }
+
+  if (!res.ok) {
+    throw new Error(`Backend responded with ${res.status} ${res.statusText}`)
+  }
+
+  return res.json()
+}
+
+export const DeleteJob = async (id: string) => {
+  let res: Response
+  try {
+    res = await fetch(`${BASE_URL}/jobs/${id}`, { method: "DELETE" })
+  } catch {
+    throw new Error(`Cannot reach backend at ${BASE_URL}/jobs/${id}`)
+  }
+
+  if (!res.ok) {
+    throw new Error(`Backend responded with ${res.status} ${res.statusText}`)
+  }
+
+  return res.json()
+}
