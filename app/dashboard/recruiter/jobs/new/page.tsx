@@ -128,14 +128,6 @@ const NewJobsPage = () => {
             across our network.
           </p>
         </div>
-        <Button
-          size="lg"
-          disabled={submitting}
-          form="new-job-form"
-          type="submit"
-        >
-          {submitting ? "Publishing..." : "Publish Job →"}
-        </Button>
       </div>
 
       {error && (
@@ -359,6 +351,16 @@ const NewJobsPage = () => {
             />
           </div>
         </Section>
+        <hr className="w-full" />
+        <Button
+          className="w-full"
+          size="lg"
+          disabled={submitting}
+          form="new-job-form"
+          type="submit"
+        >
+          {submitting ? "Publishing..." : "Publish Job →"}
+        </Button>
       </form>
     </div>
   )
