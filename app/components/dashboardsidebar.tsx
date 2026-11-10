@@ -12,6 +12,7 @@ import {
   UserRoundCog,
   Users,
   BookmarkPlus,
+  PlusCircle,
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
@@ -44,7 +45,11 @@ type MenuItem = {
 const menuItemsByRole: Record<Role, MenuItem[]> = {
   seeker: [
     { name: "Dashboard", url: "/dashboard/seeker", icon: Gauge },
-    { name: "Browse Jobs", url: "/dashboard/seeker/jobs", icon: BriefcaseBusiness },
+    {
+      name: "Browse Jobs",
+      url: "/dashboard/seeker/jobs",
+      icon: BriefcaseBusiness,
+    },
     {
       name: "My Applications",
       url: "/dashboard/seeker/applications",
@@ -56,17 +61,37 @@ const menuItemsByRole: Record<Role, MenuItem[]> = {
   ],
   recruiter: [
     { name: "Dashboard", url: "/dashboard/recruiter", icon: Gauge },
-    { name: "Add Job", url: "/dashboard/recruiter/post-job", icon: BookmarkPlus },
-    { name: "My Job Listings", url: "/dashboard/recruiter/jobs", icon: LayoutList },
+    {
+      name: "Manage Job",
+      url: "/dashboard/recruiter/jobs",
+      icon: BookmarkPlus,
+    },
+    {
+      name: "Add Job",
+      url: "/dashboard/recruiter/jobs/new",
+      icon: PlusCircle,
+    },
     { name: "Applicants", url: "/dashboard/recruiter/applicants", icon: Users },
-    { name: "Company Profile", url: "/dashboard/recruiter/company", icon: Building2 },
-    { name: "Profile", url: "/dashboard/recruiter/profile", icon: UserRoundCog },
+    {
+      name: "Company Profile",
+      url: "/dashboard/recruiter/company",
+      icon: Building2,
+    },
+    {
+      name: "Profile",
+      url: "/dashboard/recruiter/profile",
+      icon: UserRoundCog,
+    },
   ],
   admin: [
     { name: "Dashboard", url: "/dashboard/admin", icon: Gauge },
     { name: "Manage Users", url: "/dashboard/admin/users", icon: Users },
     { name: "Manage Jobs", url: "/dashboard/admin/jobs", icon: LayoutList },
-    { name: "Applications", url: "/dashboard/admin/applications", icon: FileCheck2 },
+    {
+      name: "Applications",
+      url: "/dashboard/admin/applications",
+      icon: FileCheck2,
+    },
     { name: "Reports", url: "/dashboard/admin/reports", icon: ShieldCheck },
     { name: "Profile", url: "/dashboard/admin/profile", icon: UserRoundCog },
   ],
@@ -89,7 +114,8 @@ export function DashboardSidebar() {
   // Prefer the section of the dashboard we are on, so the menu is correct
   // immediately (even while the session is still loading). Fall back to the
   // session role once it becomes available.
-  const role = roleFromPathname(pathname) ?? ((session?.user?.role || "seeker") as Role)
+  const role =
+    roleFromPathname(pathname) ?? ((session?.user?.role || "seeker") as Role)
 
   return (
     <Sidebar>
@@ -102,7 +128,10 @@ export function DashboardSidebar() {
               {menuItemsByRole[role].map((item) => (
                 <SidebarMenuItem key={item.name}>
                   <SidebarMenuButton
-                    isActive={pathname === item.url || pathname.startsWith(`${item.url}/`)}
+                    isActive={
+                      pathname === item.url ||
+                      pathname.startsWith(`${item.url}/`)
+                    }
                     render={<Link href={item.url} />}
                   >
                     <item.icon />
