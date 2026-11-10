@@ -25,12 +25,28 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-// Same types as the JobForm on the create page
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
 const typeBadgeVariant = (type: string) =>
   type === "Full-time" ? "default" : "secondary"
 
+type Job = JobForm & {
+  _id: string
+}
+
 function formatDate(dateStr: string) {
   if (!dateStr) return "—"
+
   return new Date(dateStr).toLocaleDateString("en-US", {
     month: "short",
     day: "2-digit",
@@ -40,21 +56,27 @@ function formatDate(dateStr: string) {
 
 function formatSalary(min: string, max: string, frequency: string) {
   if (!min && !max) return "—"
+
   const range = min && max ? `€${min} - €${max}` : min ? `€${min}` : `€${max}`
+
   return `${range} ${frequency}`
 }
 
 const ManageJobsPage = () => {
-  const [jobs, setJobs] = useState<JobForm[]>([])
+  const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Only updates state AFTER the fetch resolves — no synchronous setState,
-  // so it's safe to call from an effect
+  // Delete dialog states
+  const [selectedJob, setSelectedJob] = useState<Job | null>(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [deleting, setDeleting] = useState(false)
+
   async function fetchJobs() {
     try {
       const data = await GetJobs()
-      setJobs(Array.isArray(data) ? data : [])
+
+      setJobs((Array.isArray(data) ? data : []) as Job[])
       setError(null)
     } catch (err) {
       console.error(err)
@@ -65,13 +87,14 @@ const ManageJobsPage = () => {
   }
 
   useEffect(() => {
-    let ignore = false // guards against out-of-order updates if unmounted
+    let ignore = false
 
     async function load() {
       try {
         const data = await GetJobs()
+
         if (!ignore) {
-          setJobs(Array.isArray(data) ? data : [])
+          setJobs((Array.isArray(data) ? data : []) as Job[])
           setError(null)
         }
       } catch (err) {
@@ -85,29 +108,43 @@ const ManageJobsPage = () => {
     }
 
     load()
+
     return () => {
       ignore = true
     }
   }, [])
 
-  // Event handler — setState is fine here (not inside an effect)
   async function handleRetry() {
     setLoading(true)
     setError(null)
     await fetchJobs()
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm("Delete this job post?")) return
+  // Open confirmation dialog
+  function handleDeleteClick(job: Job) {
+    setSelectedJob(job)
+    setDialogOpen(true)
+  }
+
+  // Confirm and delete selected job
+  async function confirmDelete() {
+    if (!selectedJob || deleting) return
+
+    setDeleting(true)
+    setError(null)
+
     try {
-      await DeleteJob(id)
-      // remove it from the list without refetching
-      setJobs((prev) =>
-        prev.filter((job) => (job as JobForm & { _id: string })._id !== id)
-      )
+      await DeleteJob(selectedJob._id)
+
+      setJobs((prev) => prev.filter((job) => job._id !== selectedJob._id))
+
+      setDialogOpen(false)
+      setSelectedJob(null)
     } catch (err) {
       console.error(err)
-      setError("Failed to delete the job.")
+      setError("Failed to delete the job. Please try again.")
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -123,14 +160,17 @@ const ManageJobsPage = () => {
             <span className="mx-1.5">/</span>
             <span className="text-foreground">Active Listings</span>
           </p>
+
           <h1 className="text-2xl font-bold tracking-tight">
             Manage Job Posts
           </h1>
+
           <p className="text-sm text-muted-foreground">
             Review, update, or archive job listings and update details across
             your organization.
           </p>
         </div>
+
         <Link
           href="/dashboard/recruiter/jobs/new"
           className={buttonVariants({ size: "lg" })}
@@ -139,34 +179,44 @@ const ManageJobsPage = () => {
         </Link>
       </div>
 
+      {/* Error */}
       {error && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
           <span>{error}</span>
+
           <Button variant="outline" size="sm" onClick={handleRetry}>
             Retry
           </Button>
         </div>
       )}
 
-      {/* Table (horizontal scroll on small screens) */}
+      {/* Jobs Table */}
       <div className="rounded-xl border border-border/60 bg-card/50">
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead>Job Title &amp; Employment</TableHead>
+              <TableHead>Job Title & Employment</TableHead>
+
               <TableHead className="hidden md:table-cell">
-                Company &amp; Location
+                Company & Location
               </TableHead>
+
               <TableHead>Type</TableHead>
+
               <TableHead className="hidden lg:table-cell">
                 Compensation
               </TableHead>
+
               <TableHead className="hidden lg:table-cell">Applicants</TableHead>
+
               <TableHead>Status</TableHead>
+
               <TableHead className="hidden sm:table-cell">Deadline</TableHead>
+
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
+
           <TableBody>
             {loading ? (
               <TableRow>
@@ -180,6 +230,7 @@ const ManageJobsPage = () => {
                   <p className="text-sm text-muted-foreground">
                     No job posts yet.
                   </p>
+
                   <Link
                     href="/dashboard/recruiter/jobs/new"
                     className={buttonVariants({ variant: "link" })}
@@ -190,21 +241,23 @@ const ManageJobsPage = () => {
               </TableRow>
             ) : (
               jobs.map((job) => {
-                const _id = (job as JobForm & { _id: string })._id
                 const isClosed =
                   job.deadline && new Date(job.deadline) < new Date()
+
                 return (
-                  <TableRow key={_id}>
-                    {/* Job Title & Employment */}
+                  <TableRow key={job._id}>
+                    {/* Job Title */}
                     <TableCell>
                       <div className="flex items-center gap-2.5">
                         <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted">
                           <Briefcase className="size-4 text-muted-foreground" />
                         </span>
+
                         <div className="min-w-0">
                           <p className="truncate text-sm font-medium">
                             {job.jobTitle || "Untitled Job"}
                           </p>
+
                           <p className="truncate text-xs text-muted-foreground">
                             {job.jobCategory}
                           </p>
@@ -215,13 +268,14 @@ const ManageJobsPage = () => {
                     {/* Company & Location */}
                     <TableCell className="hidden md:table-cell">
                       <p className="truncate text-sm">{job.companyName}</p>
+
                       <p className="flex items-center gap-1 truncate text-xs text-muted-foreground">
                         <MapPin className="size-3 shrink-0" />
                         {job.isRemote ? "Remote" : job.location || "—"}
                       </p>
                     </TableCell>
 
-                    {/* Type — same values as JobForm */}
+                    {/* Type */}
                     <TableCell>
                       <Badge variant={typeBadgeVariant(job.jobType)}>
                         {job.jobType}
@@ -269,7 +323,7 @@ const ManageJobsPage = () => {
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
                         <Link
-                          href={`/dashboard/recruiter/jobs/new?edit=${_id}`}
+                          href={`/dashboard/recruiter/jobs/new?edit=${job._id}`}
                           title="Edit"
                           className={buttonVariants({
                             variant: "ghost",
@@ -278,14 +332,17 @@ const ManageJobsPage = () => {
                         >
                           <Pencil className="size-3.5" />
                         </Link>
+
                         <Button
                           variant="ghost"
                           size="icon-sm"
                           title="Delete"
-                          onClick={() => handleDelete(_id)}
+                          disabled={deleting}
+                          onClick={() => handleDeleteClick(job)}
                         >
                           <Trash2 className="size-3.5 text-destructive" />
                         </Button>
+
                         <Button variant="ghost" size="icon-sm" title="More">
                           <MoreVertical className="size-3.5" />
                         </Button>
@@ -298,6 +355,65 @@ const ManageJobsPage = () => {
           </TableBody>
         </Table>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog
+        open={dialogOpen}
+        onOpenChange={(open) => {
+          if (!deleting) {
+            setDialogOpen(open)
+
+            if (!open) {
+              setSelectedJob(null)
+            }
+          }
+        }}
+      >
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
+              <Trash2 />
+            </AlertDialogMedia>
+
+            <AlertDialogTitle>Delete Job?</AlertDialogTitle>
+
+            <AlertDialogDescription>
+              Are you sure you want to permanently delete{" "}
+              <span className="font-semibold text-foreground">
+                {selectedJob?.jobTitle}
+              </span>
+              ? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel variant="outline" disabled={deleting}>
+              Cancel
+            </AlertDialogCancel>
+
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleting || !selectedJob}
+              onClick={(e) => {
+                e.preventDefault()
+                confirmDelete()
+              }}
+            >
+              {deleting ? (
+                <>
+                  <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                  Deleting...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="size-4" />
+                  Delete Job
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
