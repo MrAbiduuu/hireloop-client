@@ -1,7 +1,6 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import Link from "next/link"
 import { useState } from "react"
 import { Building2, CalendarIcon, MapPin } from "lucide-react"
 
@@ -13,21 +12,8 @@ import { Select } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 
-// All form data in one flat object — easy to read, easy to send
-export type JobForm = {
-  jobTitle: string
-  companyName: string
-  jobCategory: string
-  jobType: string
-  isRemote: boolean
-  location: string
-  deadline: string
-  minSalary: string
-  maxSalary: string
-  salaryFrequency: string
-  responsibilities: string
-  qualifications: string
-}
+import type { JobForm } from "@/lib/types/jobs"
+import { PageHeader } from "@/components/dashboard/page-header"
 
 const initialForm: JobForm = {
   jobTitle: "",
@@ -111,24 +97,16 @@ const NewJobsPage = () => {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6 p-6">
+    <div className="mx-auto max-w-3xl space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            <Link href="/dashboard/recruiter/jobs" className="hover:underline">
-              Manage Jobs
-            </Link>
-            <span className="mx-1.5">/</span>
-            <span className="text-foreground">Create New Listing</span>
-          </p>
-          <h1 className="text-2xl font-bold tracking-tight">Post a New Job</h1>
-          <p className="text-sm text-muted-foreground">
-            Fill in the position specifications to attract qualified talent
-            across our network.
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        crumbs={[
+          { label: "Manage Jobs", href: "/dashboard/recruiter/jobs" },
+          { label: "Create New Listing" },
+        ]}
+        title="Post a New Job"
+        description="Fill in the position specifications to attract qualified talent across our network."
+      />
 
       {error && (
         <p className="rounded-lg border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
@@ -215,12 +193,9 @@ const NewJobsPage = () => {
                 🏠
               </span>
               <div>
-                <p className="text-sm font-medium">
-                  Remote Work Allowed (IsRemote)
-                </p>
+                <p className="text-sm font-medium">Remote Work Allowed</p>
                 <p className="text-xs text-muted-foreground">
-                  Enable local &amp; low &amp; distributed candidate
-                  applications
+                  Candidates can apply from anywhere
                 </p>
               </div>
             </div>
@@ -233,7 +208,7 @@ const NewJobsPage = () => {
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label className={fieldLabelStyles} htmlFor="location">
-                Job Location (location)
+                Job Location
               </Label>
               <div className="relative">
                 <MapPin className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -249,8 +224,7 @@ const NewJobsPage = () => {
 
             <div className="space-y-1.5">
               <Label className={fieldLabelStyles} htmlFor="deadline">
-                Application Deadline (deadline){" "}
-                <span className="text-primary">Required</span>
+                Application Deadline <span className="text-primary">*</span>
               </Label>
               <div className="relative">
                 <CalendarIcon className="absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" />
@@ -351,16 +325,24 @@ const NewJobsPage = () => {
             />
           </div>
         </Section>
-        <hr className="w-full" />
-        <Button
-          className="w-full"
-          size="lg"
-          disabled={submitting}
-          form="new-job-form"
-          type="submit"
-        >
-          {submitting ? "Publishing..." : "Publish Job →"}
-        </Button>
+        {/* Submit — sticky footer card, centered under the form */}
+        <div className="flex justify-center rounded-xl border border-border/60 bg-card/50 p-4">
+          <Button
+            className="w-full max-w-sm"
+            size="lg"
+            disabled={submitting}
+            type="submit"
+          >
+            {submitting ? (
+              <>
+                <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Publishing...
+              </>
+            ) : (
+              "Publish Job →"
+            )}
+          </Button>
+        </div>
       </form>
     </div>
   )

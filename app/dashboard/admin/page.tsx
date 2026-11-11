@@ -1,7 +1,13 @@
-import React from "react"
+import { PageHeader } from "@/components/dashboard/page-header"
 
 const AdminDashboardPage = () => {
-  return <div>Admin DashBoard Page</div>
+  return (
+    <PageHeader
+      crumbs={[{ label: "Admin" }]}
+      title="Admin Dashboard"
+      description="Manage users, job listings, and platform reports."
+    />
+  )
 }
 
 export default AdminDashboardPage

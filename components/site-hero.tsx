@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { Building2, Star, Users } from "lucide-react"
 import { JobSearchBar } from "@/components/job-search-bar"
-import globe from "@/app/images/globe.png"
+import globe from "@/public/images/globe.png"
 import Image from "next/image"
 import { cn } from "@/lib/utils"
 

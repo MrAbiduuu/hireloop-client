@@ -8,6 +8,7 @@ import {
   Heart,
   LayoutList,
   ClipboardList,
+  LogOut,
   ShieldCheck,
   UserRoundCog,
   Users,
@@ -16,7 +17,7 @@ import {
 } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
 import {
   Sidebar,
@@ -29,9 +30,8 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
-import { useSession } from "@/lib/auth-client"
-
-export type Role = "seeker" | "recruiter" | "admin"
+import { authClient, useSession } from "@/lib/auth-client"
+import type { Role } from "@/lib/types/user"
 
 type MenuItem = {
   /** Display label shown in the sidebar */
@@ -109,6 +109,7 @@ function roleFromPathname(pathname: string | null): Role | undefined {
 
 export function DashboardSidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const { data: session } = useSession()
 
   // Prefer the section of the dashboard we are on, so the menu is correct
@@ -117,11 +118,29 @@ export function DashboardSidebar() {
   const role =
     roleFromPathname(pathname) ?? ((session?.user?.role || "seeker") as Role)
 
+  async function handleSignOut() {
+    await authClient.signOut()
+    router.replace("/")
+    router.refresh()
+  }
+
   return (
     <Sidebar>
-      <SidebarHeader />
+      <SidebarHeader>
+        <SidebarGroup className="px-2 py-3">
+          <div className="rounded-lg bg-sidebar-accent/50 p-3">
+            <p className="truncate text-sm font-medium text-sidebar-foreground">
+              {session?.user?.name || "Welcome"}
+            </p>
+
+            <p className="text-xs text-sidebar-foreground/70 capitalize">
+              {role} workspace
+            </p>
+          </div>
+        </SidebarGroup>
+      </SidebarHeader>
+
       <SidebarContent>
-        <SidebarGroup />
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -142,9 +161,20 @@ export function DashboardSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        <SidebarGroup />
       </SidebarContent>
-      <SidebarFooter />
+
+      <SidebarFooter>
+        <SidebarGroup className="px-2 py-3">
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={handleSignOut}>
+                <LogOut />
+                <span>Log Out</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarGroup>
+      </SidebarFooter>
     </Sidebar>
   )
 }

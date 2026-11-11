@@ -2,9 +2,11 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import {
   Briefcase,
   CalendarIcon,
+  Eye,
   MapPin,
   Pencil,
   Trash2,
@@ -12,10 +14,10 @@ import {
 } from "lucide-react"
 
 import { DeleteJob, GetJobs } from "@/lib/actions/jobs"
-import type { JobForm } from "@/app/dashboard/recruiter/jobs/new/page"
+import type { Job } from "@/lib/types/jobs"
+import { PageHeader } from "@/components/dashboard/page-header"
 import { Badge } from "@/components/ui/badge"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { toast } from "@/components/ui/toast"
 import {
   Table,
   TableBody,
@@ -36,14 +38,9 @@ import {
   AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { ThreeDots } from "@/app/components/threeDots"
 
 const typeBadgeVariant = (type: string) =>
   type === "Full-time" ? "default" : "secondary"
-
-type Job = JobForm & {
-  _id: string
-}
 
 function formatDate(dateStr: string) {
   if (!dateStr) return "—"
@@ -64,6 +61,7 @@ function formatSalary(min: string, max: string, frequency: string) {
 }
 
 const ManageJobsPage = () => {
+  const router = useRouter()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -73,29 +71,8 @@ const ManageJobsPage = () => {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
 
-  // Favourite (starred) jobs
-  const [favourites, setFavourites] = useState<Set<string>>(new Set())
-
-  function handleToggleFavourite(id: string) {
-    let added = false
-
-    setFavourites((prev) => {
-      const next = new Set(prev)
-
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-        added = true
-      }
-
-      return next
-    })
-
-    toast.add({
-      title: added ? "Added to Favourites" : "Removed from Favourites",
-    })
-  }
+  // View details dialog state
+  const [viewJob, setViewJob] = useState<Job | null>(null)
 
   async function fetchJobs() {
     try {
@@ -174,35 +151,21 @@ const ManageJobsPage = () => {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            <Link href="/dashboard/recruiter" className="hover:underline">
-              Manage Jobs
-            </Link>
-            <span className="mx-1.5">/</span>
-            <span className="text-foreground">Active Listings</span>
-          </p>
-
-          <h1 className="text-2xl font-bold tracking-tight">
-            Manage Job Posts
-          </h1>
-
-          <p className="text-sm text-muted-foreground">
-            Review, update, or archive job listings and update details across
-            your organization.
-          </p>
-        </div>
-
-        <Link
-          href="/dashboard/recruiter/jobs/new"
-          className={buttonVariants({ size: "lg" })}
-        >
-          + Post New Job
-        </Link>
-      </div>
+      <PageHeader
+        crumbs={[{ label: "Manage Jobs", href: "/dashboard/recruiter/jobs" }, { label: "Active Listings" }]}
+        title="Manage Job Posts"
+        description="Review, update, or archive job listings and update details across your organization."
+        action={
+          <Link
+            href="/dashboard/recruiter/jobs/new"
+            className={buttonVariants({ size: "lg" })}
+          >
+            + Post New Job
+          </Link>
+        }
+      />
 
       {/* Error */}
       {error && (
@@ -347,6 +310,16 @@ const ManageJobsPage = () => {
                     {/* Actions */}
                     <TableCell>
                       <div className="flex items-center justify-end gap-0.5">
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          title="View"
+                          disabled={deleting}
+                          onClick={() => setViewJob(job)}
+                        >
+                          <Eye className="size-3.5 text-muted-foreground" />
+                        </Button>
+
                         <Link
                           href={`/dashboard/recruiter/jobs/new?edit=${job._id}`}
                           title="Edit"
@@ -358,15 +331,15 @@ const ManageJobsPage = () => {
                           <Pencil className="size-3.5 text-muted-foreground" />
                         </Link>
 
-                        <ThreeDots
-                          favourite={favourites.has(job._id)}
-                          onToggleFavourite={() =>
-                            handleToggleFavourite(job._id)
-                          }
-                          onDelete={() => handleDeleteClick(job)}
-                          deleteDisabled={deleting}
-                          menuDisabled={deleting}
-                        />
+                        <Button
+                          variant="ghost"
+                          size="icon-sm"
+                          title="Delete"
+                          disabled={deleting}
+                          onClick={() => handleDeleteClick(job)}
+                        >
+                          <Trash2 className="size-3.5 text-destructive" />
+                        </Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -434,6 +407,113 @@ const ManageJobsPage = () => {
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Job Details Dialog */}
+      <AlertDialog
+        open={viewJob !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setViewJob(null)
+          }
+        }}
+      >
+        {viewJob && (
+          <AlertDialogContent className="max-w-md">
+            <AlertDialogHeader>
+              <AlertDialogMedia className="bg-primary/10 text-primary dark:bg-primary/20">
+                <Eye />
+              </AlertDialogMedia>
+
+              <AlertDialogTitle>
+                {viewJob.jobTitle || "Untitled Job"}
+              </AlertDialogTitle>
+
+              <AlertDialogDescription>
+                {viewJob.companyName || "Unknown Company"}
+                <span className="mx-1.5">·</span>
+                {viewJob.isRemote
+                  ? "Remote"
+                  : viewJob.location || "Location not set"}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            {/* Details grid */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-3 rounded-lg border bg-muted/40 p-3 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground">Employment</p>
+
+                <p className="font-medium">{viewJob.jobType || "—"}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Category</p>
+
+                <p className="font-medium">{viewJob.jobCategory || "—"}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Compensation</p>
+
+                <p className="font-medium">
+                  {formatSalary(
+                    viewJob.minSalary,
+                    viewJob.maxSalary,
+                    viewJob.salaryFrequency
+                  )}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Deadline</p>
+
+                <p className="font-medium">{formatDate(viewJob.deadline)}</p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Status</p>
+
+                <p className="flex items-center gap-1.5 font-medium">
+                  <span
+                    className={
+                      viewJob.deadline && new Date(viewJob.deadline) < new Date()
+                        ? "size-2 rounded-full bg-muted-foreground"
+                        : "size-2 rounded-full bg-emerald-500"
+                    }
+                  />
+                  {viewJob.deadline && new Date(viewJob.deadline) < new Date()
+                    ? "Closed"
+                    : "Active"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs text-muted-foreground">Location</p>
+
+                <p className="truncate font-medium">
+                  {viewJob.isRemote
+                    ? "Remote"
+                    : viewJob.location || "—"}
+                </p>
+              </div>
+            </div>
+
+            <AlertDialogFooter>
+              <AlertDialogCancel variant="outline">Close</AlertDialogCancel>
+
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault()
+                  setViewJob(null)
+                  router.push(`/dashboard/recruiter/jobs/new?edit=${viewJob._id}`)
+                }}
+              >
+                <Pencil className="size-4" />
+                Edit This Job
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        )}
       </AlertDialog>
     </div>
   )

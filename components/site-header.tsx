@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
 import Image from "next/image"
-import logo from "@/app/images/logo.png"
+import logo from "@/public/images/logo.png"
 import { authClient, useSession } from "@/lib/auth-client"
 
 export function Logo({ className }: { className?: string }) {

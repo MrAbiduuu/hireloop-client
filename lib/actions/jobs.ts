@@ -1,4 +1,4 @@
-import { JobForm } from "@/app/dashboard/recruiter/jobs/new/page"
+import type { JobForm } from "@/lib/types/jobs"
 import { toast } from "@/components/ui/toast"
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
