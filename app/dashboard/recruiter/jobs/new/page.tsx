@@ -13,6 +13,7 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 
 import type { JobForm } from "@/lib/types/jobs"
+import { JOB_CATEGORIES, JOB_TYPES, SALARY_FREQUENCIES } from "@/lib/constants/jobs"
 import { PageHeader } from "@/components/dashboard/page-header"
 
 const initialForm: JobForm = {
@@ -29,18 +30,6 @@ const initialForm: JobForm = {
   responsibilities: "",
   qualifications: "",
 }
-
-const JOB_TYPES = ["Full-time", "Part-time", "Contract", "Internship"]
-const JOB_CATEGORIES = [
-  "Engineering & Tech",
-  "Design & Creative",
-  "Marketing & Sales",
-  "Finance & Legal",
-  "Healthcare",
-  "Education",
-  "Other",
-]
-const SALARY_FREQUENCIES = ["per hour", "per day", "per month", "per year"]
 
 const inputStyles = "h-9 bg-input/40"
 const sectionTitleStyles =

@@ -36,9 +36,13 @@ export const PublishJobs = async (data: JobForm) => {
 }
 
 export const GetJobs = async (query = ""): Promise<JobForm[]> => {
+  // Normalize the query into a proper search string: "search=react&jobType=Contract"
+  // -> "/jobs/?search=react&jobType=Contract" (empty query keeps "/jobs/").
+  const search = query ? `?${query.replace(/^\?/, "")}` : ""
+
   let res: Response
   try {
-    res = await fetch(`${BASE_URL}/jobs/${query}`, { cache: "no-store" })
+    res = await fetch(`${BASE_URL}/jobs/${search}`, { cache: "no-store" })
   } catch {
     throw new Error(`Cannot reach backend at ${BASE_URL}/jobs`)
   }
