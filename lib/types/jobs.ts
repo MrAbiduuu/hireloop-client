@@ -2,6 +2,7 @@
 
 // All form data in one flat object — easy to read, easy to send
 export type JobForm = {
+  _id: string
   jobTitle: string
   companyName: string
   jobCategory: string

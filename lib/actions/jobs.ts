@@ -35,10 +35,10 @@ export const PublishJobs = async (data: JobForm) => {
   return res.json()
 }
 
-export const GetJobs = async (): Promise<JobForm[]> => {
+export const GetJobs = async (query = ""): Promise<JobForm[]> => {
   let res: Response
   try {
-    res = await fetch(`${BASE_URL}/jobs`, { cache: "no-store" })
+    res = await fetch(`${BASE_URL}/jobs/${query}`, { cache: "no-store" })
   } catch {
     throw new Error(`Cannot reach backend at ${BASE_URL}/jobs`)
   }

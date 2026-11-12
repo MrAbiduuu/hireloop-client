@@ -38,7 +38,7 @@ export function SiteHeader() {
   const router = useRouter()
   const { data: session } = useSession()
   const navLinks = [
-    { href: "/jobs", label: "Browse Jobs" },
+    { href: "/browse-jobs", label: "Browse Jobs" },
     { href: "/company", label: "Company" },
     { href: "/pricing", label: "Pricing" },
     {
