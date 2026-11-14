@@ -1,18 +1,14 @@
 "use client"
 
-import {
-  Banknote,
-  Bookmark,
-  Building2,
-  Clock,
-  MapPin,
-} from "lucide-react"
+import { Banknote, Bookmark, Building2, Clock, MapPin } from "lucide-react"
 
-import type { JobForm } from "@/lib/types/jobs"
+import type { Job } from "@/lib/types/jobs"
+import { useSavedJobs } from "@/hooks/use-saved-jobs"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
 
-function formatSalary(job: JobForm) {
+function formatSalary(job: Job) {
   if (!job.minSalary && !job.maxSalary) return null
 
   const range =
@@ -23,14 +19,24 @@ function formatSalary(job: JobForm) {
   return `${range} ${job.salaryFrequency}`
 }
 
-export function JobCard({ job }: { job: JobForm }) {
-  // TODO: save/bookmark this job for the signed-in user.
-  function handleSave() {}
+export function JobCard({ job }: { job: Job }) {
+  const { isSaved, toggle } = useSavedJobs()
+  const saved = isSaved(job._id)
 
   const salary = formatSalary(job)
+  const router = useRouter()
+
+  // Navigate to the job's details page using its id.
+  const handleOpenJob = () => {
+    if (!job._id) return
+    router.push(`/browse-jobs/${job._id}`)
+  }
 
   return (
-    <article className="rounded-xl border bg-card p-5 transition-colors hover:border-primary/40">
+    <article
+      onClick={handleOpenJob}
+      className="cursor-pointer rounded-xl border bg-card p-5 transition-colors hover:border-primary/40"
+    >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0 space-y-1">
           <h3 className="truncate font-semibold">{job.jobTitle}</h3>
@@ -47,10 +53,22 @@ export function JobCard({ job }: { job: JobForm }) {
         <Button
           variant="ghost"
           size="icon"
-          aria-label="Save job"
-          onClick={handleSave}
+          aria-label={saved ? "Remove from saved jobs" : "Save job"}
+          aria-pressed={saved}
+          onClick={(event) => {
+            // Stop the click from bubbling to the card, which would
+            // navigate to the details page instead of just saving.
+            event.stopPropagation()
+            toggle(job._id)
+          }}
         >
-          <Bookmark className="size-4 text-muted-foreground" />
+          <Bookmark
+            className={
+              saved
+                ? "size-4 fill-current text-primary"
+                : "size-4 text-muted-foreground"
+            }
+          />
         </Button>
       </div>
 

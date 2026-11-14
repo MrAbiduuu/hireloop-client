@@ -1,7 +1,7 @@
 import { SearchX } from "lucide-react"
 
 import { GetJobs } from "@/lib/actions/jobs"
-import type { JobForm } from "@/lib/types/jobs"
+import type { Job } from "@/lib/types/jobs"
 import { FiltersSidebar } from "@/components/browse-jobs/filters-sidebar"
 import { JobCard } from "@/components/browse-jobs/job-card"
 import { SearchBar } from "@/components/browse-jobs/search-bar"
@@ -28,7 +28,7 @@ const BrowseJobs = async ({ searchParams }: { searchParams: SearchParams }) => {
     ][]
   ).toString()
 
-  let jobs: JobForm[] = []
+  let jobs: Job[] = []
   let error: string | null = null
 
   try {

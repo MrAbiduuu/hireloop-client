@@ -1,55 +1,78 @@
 "use client"
 
-import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 
 import { JOB_CATEGORIES, JOB_TYPES } from "@/lib/constants/jobs"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select } from "@/components/ui/select"
 
-type Filters = {
-  jobTypes: string[]
-  category: string
-  isRemote: boolean
-}
-
-const initialFilters: Filters = {
-  jobTypes: [],
-  category: "",
-  isRemote: false,
-}
-
 const sectionTitle = "text-xs font-medium text-muted-foreground"
 const optionRow = "flex items-center gap-2.5 text-sm"
 
 export function FiltersSidebar() {
-  const [filters, setFilters] = useState<Filters>(initialFilters)
+  const router = useRouter()
+  const searchParams = useSearchParams()
 
-  function handleToggleType(type: string, checked: boolean) {
-    setFilters((prev) => ({
-      ...prev,
-      jobTypes: checked
-        ? [...prev.jobTypes, type]
-        : prev.jobTypes.filter((t) => t !== type),
-    }))
+  // The URL is the single source of truth for the filter state.
+  // Reading it here means checkboxes stay correct on refresh and back-navigation.
+  const selectedTypes = searchParams.getAll("jobType")
+  const category = searchParams.get("category") ?? ""
+  const isRemote = searchParams.get("remote") === "true"
+
+  const hasFilters = selectedTypes.length > 0 || category !== "" || isRemote
+
+  /** Apply a change to the URL params, then navigate so the server page re-fetches. */
+  function applyParams(update: (params: URLSearchParams) => void) {
+    const params = new URLSearchParams(searchParams)
+    update(params)
+    router.push(`/browse-jobs?${params.toString()}`)
   }
 
-  function handleCategoryChange(category: string) {
-    setFilters((prev) => ({ ...prev, category }))
+  function handleToggleType(type: string, checked: boolean) {
+    applyParams((params) => {
+      // Checkbox groups use a repeated key: ?jobType=Full-time&jobType=Contract
+      const types = new Set(params.getAll("jobType"))
+
+      if (checked) {
+        types.add(type)
+      } else {
+        types.delete(type)
+      }
+
+      params.delete("jobType")
+      types.forEach((value) => params.append("jobType", value))
+    })
+  }
+
+  function handleCategoryChange(value: string) {
+    applyParams((params) => {
+      if (value) {
+        params.set("category", value)
+      } else {
+        params.delete("category")
+      }
+    })
   }
 
   function handleRemoteChange(checked: boolean) {
-    setFilters((prev) => ({ ...prev, isRemote: checked }))
+    applyParams((params) => {
+      if (checked) {
+        params.set("remote", "true")
+      } else {
+        params.delete("remote")
+      }
+    })
   }
 
-  // TODO: sync `filters` into the URL query (e.g. jobType=Full-time&jobType=Contract)
-  // so the server page re-fetches the matching jobs.
+  // Clear the filters but keep the search term.
   function handleClear() {
-    setFilters(initialFilters)
+    applyParams((params) => {
+      params.delete("jobType")
+      params.delete("category")
+      params.delete("remote")
+    })
   }
-
-  const hasFilters =
-    filters.jobTypes.length > 0 || filters.category !== "" || filters.isRemote
 
   return (
     <aside className="h-fit space-y-5 rounded-xl border bg-card p-5 lg:sticky lg:top-24">
@@ -61,7 +84,7 @@ export function FiltersSidebar() {
         {JOB_TYPES.map((type) => (
           <label key={type} className={optionRow}>
             <Checkbox
-              checked={filters.jobTypes.includes(type)}
+              checked={selectedTypes.includes(type)}
               onCheckedChange={(checked) => handleToggleType(type, checked)}
             />
             {type}
@@ -75,13 +98,13 @@ export function FiltersSidebar() {
         <Select
           aria-label="Filter by category"
           className="h-9"
-          value={filters.category}
+          value={category}
           onChange={(event) => handleCategoryChange(event.target.value)}
         >
           <option value="">All categories</option>
-          {JOB_CATEGORIES.map((category) => (
-            <option key={category} value={category}>
-              {category}
+          {JOB_CATEGORIES.map((option) => (
+            <option key={option} value={option}>
+              {option}
             </option>
           ))}
         </Select>
@@ -90,7 +113,7 @@ export function FiltersSidebar() {
       {/* Remote */}
       <label className={optionRow}>
         <Checkbox
-          checked={filters.isRemote}
+          checked={isRemote}
           onCheckedChange={(checked) => handleRemoteChange(checked)}
         />
         Remote only

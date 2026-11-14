@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, type FormEvent } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Search } from "lucide-react"
 
@@ -14,12 +14,21 @@ type SearchBarProps = {
 
 export function SearchBar({ query = "" }: SearchBarProps) {
   const [value, setValue] = useState(query)
+  const [lastQuery, setLastQuery] = useState(query)
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  // Sync the input when the URL changes outside the form
+  // (e.g. back/forward navigation). Resetting state during render
+  // is the React-recommended alternative to an effect here.
+  if (query !== lastQuery) {
+    setLastQuery(query)
+    setValue(query)
+  }
+
   // Push the search term to the URL so the server page re-fetches the
   // matching jobs, keeping any existing filters/sort params intact.
-  function handleSearch(event: React.FormEvent<HTMLFormElement>) {
+  function handleSearch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
     const params = new URLSearchParams(searchParams)
@@ -28,7 +37,10 @@ export function SearchBar({ query = "" }: SearchBarProps) {
     } else {
       params.delete("search")
     }
-    router.push(`/browse-jobs?${params.toString()}`)
+
+    // Avoid a dangling "?" when no filters/search remain.
+    const queryString = params.toString()
+    router.push(queryString ? `/browse-jobs?${queryString}` : "/browse-jobs")
   }
 
   return (

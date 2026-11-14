@@ -1,12 +1,29 @@
 "use client"
 
+import { useRouter, useSearchParams } from "next/navigation"
+
 import { SORT_OPTIONS } from "@/lib/constants/jobs"
 import { Select } from "@/components/ui/select"
 
 export function SortSelect() {
-  // TODO: push the selected `sort` value to the URL so the server page
-  // re-fetches the jobs in the requested order.
-  function handleSortChange() {}
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // The URL is the source of truth; default is "Most Recent".
+  const currentSort = searchParams.get("sort") ?? SORT_OPTIONS[0]
+
+  function handleSortChange(value: string) {
+    const params = new URLSearchParams(searchParams)
+
+    // Don't keep "sort=Most Recent" in the URL — it's the default.
+    if (value === SORT_OPTIONS[0]) {
+      params.delete("sort")
+    } else {
+      params.set("sort", value)
+    }
+
+    router.push(`/browse-jobs?${params.toString()}`)
+  }
 
   return (
     <label className="flex items-center gap-2 text-xs text-muted-foreground">
@@ -14,8 +31,8 @@ export function SortSelect() {
       <Select
         aria-label="Sort jobs"
         className="h-8 w-40"
-        defaultValue={SORT_OPTIONS[0]}
-        onChange={handleSortChange}
+        value={currentSort}
+        onChange={(event) => handleSortChange(event.target.value)}
       >
         {SORT_OPTIONS.map((option) => (
           <option key={option} value={option}>

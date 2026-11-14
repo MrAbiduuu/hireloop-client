@@ -1,4 +1,4 @@
-import type { JobForm } from "@/lib/types/jobs"
+import type { Job, JobForm } from "@/lib/types/jobs"
 import { toast } from "@/components/ui/toast"
 
 const BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000"
@@ -35,7 +35,7 @@ export const PublishJobs = async (data: JobForm) => {
   return res.json()
 }
 
-export const GetJobs = async (query = ""): Promise<JobForm[]> => {
+export const GetJobs = async (query = ""): Promise<Job[]> => {
   // Normalize the query into a proper search string: "search=react&jobType=Contract"
   // -> "/jobs/?search=react&jobType=Contract" (empty query keeps "/jobs/").
   const search = query ? `?${query.replace(/^\?/, "")}` : ""
