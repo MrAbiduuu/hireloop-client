@@ -46,8 +46,8 @@ const menuItemsByRole: Record<Role, MenuItem[]> = {
   seeker: [
     { name: "Dashboard", url: "/dashboard/seeker", icon: Gauge },
     {
-      name: "Browse Jobs",
-      url: "/dashboard/seeker/jobs",
+      name: "Jobs",
+      url: "/browse-jobs",
       icon: BriefcaseBusiness,
     },
     {

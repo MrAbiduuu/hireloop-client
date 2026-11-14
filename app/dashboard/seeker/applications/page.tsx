@@ -334,7 +334,7 @@ export default function JobApplicationsPage() {
                         variant={
                           badge.label === "Applied" ? "secondary" : "outline"
                         }
-                        className={badge.className}
+                        className={`${badge.className} bg-green-500/15`}
                       >
                         {badge.label}
                       </Badge>
