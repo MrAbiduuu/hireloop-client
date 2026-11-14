@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { BadgeCheck, Bookmark, Building2 } from "lucide-react"
@@ -11,7 +11,7 @@ import { toast } from "@/components/ui/toast"
 import { useSavedJobs } from "@/hooks/use-saved-jobs"
 import type { JobDetails } from "@/lib/types/jobs"
 import { useSession } from "@/lib/auth-client"
-import { applyToAJob } from "@/lib/actions/applications"
+import { applyToAJob, hasAppliedToJob } from "@/lib/actions/applications"
 
 export function JobDetailsHeader({ job }: { job: JobDetails }) {
   const { isSaved, toggle } = useSavedJobs()
@@ -21,6 +21,28 @@ export function JobDetailsHeader({ job }: { job: JobDetails }) {
   const router = useRouter()
   const [applying, setApplying] = useState(false)
   const [applied, setApplied] = useState(false)
+
+  // `applied` starts as false on every mount, so ask the backend whether
+  // this user already applied — otherwise the button resets to "Apply Now"
+  // each time the details page is opened again.
+  useEffect(() => {
+    if (!user || user.role !== "seeker") return
+
+    let cancelled = false
+
+    hasAppliedToJob(job._id, user.id)
+      .then((hasApplied) => {
+        if (!cancelled && hasApplied) setApplied(true)
+      })
+      .catch(() => {
+        // Non-fatal: leave the button as "Apply Now" and let the backend's
+        // duplicate check (409) catch repeat applications on submit.
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [job._id, user?.id, user?.role])
 
   const handleApplyNow = async () => {
     if (!user) {
@@ -45,6 +67,10 @@ export function JobDetailsHeader({ job }: { job: JobDetails }) {
         email: user.email,
         jobTitle: job.jobTitle,
         companyName: job.companyName,
+        // Job snapshot for the "My Applications" list
+        jobType: job.jobType,
+        isRemote: job.isRemote,
+        location: job.location,
       }
       const res = await applyToAJob(application)
       if (res.insertedId) {

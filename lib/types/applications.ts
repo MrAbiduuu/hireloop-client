@@ -6,6 +6,12 @@ export type Application = {
   email: string
   jobTitle: string
   companyName: string
+
+  // Snapshot of the job at apply time, so "My Applications" can still show
+  // the job type / workplace even if the job is edited or deleted later.
+  jobType: string
+  isRemote: boolean
+  location: string
 }
 
 // An application as returned by the backend

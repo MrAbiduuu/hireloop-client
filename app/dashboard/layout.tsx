@@ -1,7 +1,6 @@
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { DashboardSidebar } from "@/components/dashboard/sidebar"
 import { Logo } from "@/components/site-header"
-import { Toaster } from "@/components/ui/toast"
 
 const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -23,8 +22,6 @@ const DashboardLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="mx-auto w-full max-w-6xl">{children}</div>
         </main>
       </SidebarInset>
-
-      <Toaster />
     </SidebarProvider>
   )
 }
