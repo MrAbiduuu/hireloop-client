@@ -17,6 +17,7 @@ export function CompanyOverview({ job }: { job: JobDetails }) {
             src={company.coverImage}
             alt={`${company.name} office`}
             fill
+            unoptimized
             className="object-cover"
           />
         ) : (
