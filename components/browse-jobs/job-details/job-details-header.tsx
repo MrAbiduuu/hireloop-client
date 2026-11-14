@@ -1,16 +1,70 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
+import { useRouter } from "next/navigation"
 import { BadgeCheck, Bookmark, Building2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { toast } from "@/components/ui/toast"
 import { useSavedJobs } from "@/hooks/use-saved-jobs"
 import type { JobDetails } from "@/lib/types/jobs"
+import { useSession } from "@/lib/auth-client"
+import { applyToAJob } from "@/lib/actions/applications"
 
 export function JobDetailsHeader({ job }: { job: JobDetails }) {
   const { isSaved, toggle } = useSavedJobs()
   const saved = isSaved(job._id)
+  const { data: session } = useSession()
+  const user = session?.user
+  const router = useRouter()
+  const [applying, setApplying] = useState(false)
+  const [applied, setApplied] = useState(false)
+
+  const handleApplyNow = async () => {
+    if (!user) {
+      router.push(`/signin?redirectTo=/browse-jobs/${job._id}`)
+      return
+    }
+
+    if (user.role !== "seeker") {
+      console.log("User Is not a Seeker")
+      toast.add({
+        title: "Only job seekers can apply",
+        description: "You are signed in as a recruiter.",
+      })
+      return
+    }
+
+    setApplying(true)
+    try {
+      const application = {
+        jobId: job._id,
+        userId: user.id,
+        email: user.email,
+        jobTitle: job.jobTitle,
+        companyName: job.companyName,
+      }
+      const res = await applyToAJob(application)
+      if (res.insertedId) {
+        toast.add({ title: "Application submitted successfully" })
+
+        setApplied(true)
+
+        setTimeout(() => {
+          router.push("/browse-jobs")
+        }, 500)
+      }
+    } catch (err) {
+      toast.add({
+        title: "Could not submit application",
+        description: err instanceof Error ? err.message : "Please try again.",
+      })
+    } finally {
+      setApplying(false)
+    }
+  }
 
   return (
     <section className="rounded-xl border bg-card p-5 sm:p-6">
@@ -66,9 +120,23 @@ export function JobDetailsHeader({ job }: { job: JobDetails }) {
             />
           </Button>
 
-          {/* TODO: wire up to the apply endpoint when it exists */}
-          <Button className="rounded-xl bg-indigo-500 text-white hover:bg-indigo-400">
-            Apply Now
+          {/* Apply Button */}
+
+          <Button
+            onClick={handleApplyNow}
+            disabled={applying || applied}
+            className="rounded-xl bg-indigo-500 text-white hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {applied ? (
+              "Applied"
+            ) : applying ? (
+              <>
+                <span className="size-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                Applying...
+              </>
+            ) : (
+              "Apply Now"
+            )}
           </Button>
         </div>
       </div>

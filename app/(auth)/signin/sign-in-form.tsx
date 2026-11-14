@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import * as React from "react"
 import { useState } from "react"
 
@@ -23,6 +23,9 @@ export function SignInForm() {
   const [error, setError] = useState<string | null>(null)
   const [rememberMe, setRememberMe] = useState(true)
 
+  const searchParamas = useSearchParams()
+  const redirectTo = searchParamas.get("redirectTo") ?? "/"
+
   async function handleSignIn(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const formData = new FormData(event.currentTarget)
@@ -32,7 +35,8 @@ export function SignInForm() {
     const { error: authError } = await authClient.signIn.email({
       email: String(formData.get("email") ?? ""),
       password: String(formData.get("password") ?? ""),
-      rememberMe,
+      rememberMe: true,
+      callbackURL: redirectTo,
     })
     setPending(false)
 

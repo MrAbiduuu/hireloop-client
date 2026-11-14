@@ -6,6 +6,7 @@ import { FiltersSidebar } from "@/components/browse-jobs/filters-sidebar"
 import { JobCard } from "@/components/browse-jobs/job-card"
 import { SearchBar } from "@/components/browse-jobs/search-bar"
 import { SortSelect } from "@/components/browse-jobs/sort-select"
+import { SiteHeader } from "@/components/site-header"
 
 type SearchParams = Promise<{ [key: string]: string | string[] | undefined }>
 
@@ -38,50 +39,53 @@ const BrowseJobs = async ({ searchParams }: { searchParams: SearchParams }) => {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
-      <SearchBar query={pickParam(params, "search")} />
+    <>
+      <SiteHeader />
+      <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-6">
+        <SearchBar query={pickParam(params, "search")} />
 
-      <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
-        <FiltersSidebar />
+        <div className="grid gap-6 lg:grid-cols-[240px_1fr]">
+          <FiltersSidebar />
 
-        <section className="space-y-4">
-          {/* Results header */}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <h1 className="text-lg font-semibold">
-              Found {jobs.length} Professional Jobs
-            </h1>
-            <SortSelect />
-          </div>
-
-          {/* Error state */}
-          {error && (
-            <p className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
-              {error}
-            </p>
-          )}
-
-          {/* Empty state */}
-          {!error && jobs.length === 0 && (
-            <div className="flex flex-col items-center gap-2 rounded-xl border bg-card px-6 py-16 text-center">
-              <SearchX
-                className="size-8 text-muted-foreground"
-                aria-hidden="true"
-              />
-              <p className="font-medium">No jobs found</p>
-              <p className="max-w-sm text-sm text-muted-foreground">
-                Try adjusting your search keywords or clearing some filters to
-                see more results.
-              </p>
+          <section className="space-y-4">
+            {/* Results header */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <h1 className="text-lg font-semibold">
+                Found {jobs.length} Professional Jobs
+              </h1>
+              <SortSelect />
             </div>
-          )}
 
-          {/* Job list */}
-          {jobs.map((job) => (
-            <JobCard key={job._id} job={job} />
-          ))}
-        </section>
+            {/* Error state */}
+            {error && (
+              <p className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                {error}
+              </p>
+            )}
+
+            {/* Empty state */}
+            {!error && jobs.length === 0 && (
+              <div className="flex flex-col items-center gap-2 rounded-xl border bg-card px-6 py-16 text-center">
+                <SearchX
+                  className="size-8 text-muted-foreground"
+                  aria-hidden="true"
+                />
+                <p className="font-medium">No jobs found</p>
+                <p className="max-w-sm text-sm text-muted-foreground">
+                  Try adjusting your search keywords or clearing some filters to
+                  see more results.
+                </p>
+              </div>
+            )}
+
+            {/* Job list */}
+            {jobs.map((job) => (
+              <JobCard key={job._id} job={job} />
+            ))}
+          </section>
+        </div>
       </div>
-    </div>
+    </>
   )
 }
 
