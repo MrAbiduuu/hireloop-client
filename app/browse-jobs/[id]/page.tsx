@@ -11,7 +11,11 @@ import { getJobDetails } from "@/lib/data/job-details"
  * swap `getJobDetails(id)` for the fetch action inside the try block
  * below and render `error` instead of the job when it fails.
  */
-const JobDetailsPage = async ({ params }: { params: Promise<{ id: string }> }) => {
+const JobDetailsPage = async ({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) => {
   const { id } = await params
 
   // TODO: replace with `await GetJobDetails(id)` once the backend endpoint is ready.

@@ -54,6 +54,11 @@ export const GetJobs = async (query = ""): Promise<Job[]> => {
   return res.json()
 }
 
+export const GetJobsById = async (jobId: string): Promise<Job> => {
+  const res = await fetch(`${BASE_URL}/browse-jobs/${jobId}`)
+  return res.json()
+}
+
 export const DeleteJob = async (id: string) => {
   let res: Response
   try {
