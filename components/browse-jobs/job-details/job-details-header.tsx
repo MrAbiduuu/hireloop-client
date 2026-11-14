@@ -48,8 +48,6 @@ export function JobDetailsHeader({ job }: { job: JobDetails }) {
       }
       const res = await applyToAJob(application)
       if (res.insertedId) {
-        toast.add({ title: "Application submitted successfully" })
-
         setApplied(true)
 
         setTimeout(() => {
