@@ -74,6 +74,25 @@ export const getMyApplications = async (
 
   return res.json()
 }
+export const getMyApplicationsCount = async (
+  userId: string
+): Promise<{ count: number }> => {
+  let res: Response
+  try {
+    res = await fetch(
+      `${BASE_URL}/applications/count?userId=${encodeURIComponent(userId)}`,
+      { cache: "no-store" }
+    )
+  } catch {
+    throw new Error(`Cannot reach backend at ${BASE_URL}/applications`)
+  }
+
+  if (!res.ok) {
+    throw new Error(`Backend responded with ${res.status}`)
+  }
+
+  return res.json()
+}
 
 // Withdraw (delete) an application by its id.
 export const deleteApplication = async (id: string) => {

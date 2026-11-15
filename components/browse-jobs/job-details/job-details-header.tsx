@@ -11,7 +11,11 @@ import { toast } from "@/components/ui/toast"
 import { useSavedJobs } from "@/hooks/use-saved-jobs"
 import type { JobDetails } from "@/lib/types/jobs"
 import { useSession } from "@/lib/auth-client"
-import { applyToAJob, hasAppliedToJob } from "@/lib/actions/applications"
+import {
+  applyToAJob,
+  getMyApplicationsCount,
+  hasAppliedToJob,
+} from "@/lib/actions/applications"
 
 export function JobDetailsHeader({ job }: { job: JobDetails }) {
   const { isSaved, toggle } = useSavedJobs()
@@ -72,13 +76,24 @@ export function JobDetailsHeader({ job }: { job: JobDetails }) {
         isRemote: job.isRemote,
         location: job.location,
       }
-      const res = await applyToAJob(application)
-      if (res.insertedId) {
-        setApplied(true)
+      const countRes = await getMyApplicationsCount(user.id)
+      if (countRes.count >= 5) {
+        toast.add({
+          title: "Free applications limit reached",
+          description:
+            "You've used all 5 free applications. Upgrade to continue applying.",
+        })
+        router.push("/payment")
+        return
+      } else {
+        const res = await applyToAJob(application)
+        if (res.insertedId) {
+          setApplied(true)
 
-        setTimeout(() => {
-          router.push("/browse-jobs")
-        }, 500)
+          setTimeout(() => {
+            router.push("/browse-jobs")
+          }, 500)
+        }
       }
     } catch (err) {
       toast.add({
