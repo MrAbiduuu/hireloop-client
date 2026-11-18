@@ -15,6 +15,13 @@ export const auth = betterAuth({
         type: ["seeker", "recruiter", "admin"],
         input: true,
       },
+      // Seeker profile fields. All are optional so existing accounts keep working.
+      headline: { type: "string", required: false, input: true },
+      bio: { type: "string", required: false, input: true },
+      location: { type: "string", required: false, input: true },
+      phone: { type: "string", required: false, input: true },
+      skills: { type: "string[]", required: false, input: true },
+      resumeName: { type: "string", required: false, input: true },
     },
   },
   socialProviders: {
