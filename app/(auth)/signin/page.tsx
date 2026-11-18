@@ -1,5 +1,6 @@
 import type { Metadata } from "next"
 import Link from "next/link"
+import { Suspense } from "react"
 
 import { SignInForm } from "@/app/(auth)/signin/sign-in-form"
 
@@ -19,7 +20,9 @@ export default function SignInPage() {
         </p>
       </div>
 
-      <SignInForm />
+      <Suspense>
+        <SignInForm />
+      </Suspense>
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}

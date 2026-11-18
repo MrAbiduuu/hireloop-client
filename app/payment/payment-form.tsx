@@ -52,7 +52,9 @@ export function PaymentForm() {
     return `${digits.slice(0, 2)} / ${digits.slice(2)}`
   }
 
-  const handlePay = () => {
+  const [loading, setLoading] = useState(false)
+
+  const handlePay = async () => {
     if (!email || !cardholder) {
       toast.add({
         title: "Missing details",
@@ -60,10 +62,22 @@ export function PaymentForm() {
       })
       return
     }
-    toast.add({
-      title: "Payment gateway coming soon",
-      description: "Checkout is not wired up yet — this is a demo page.",
-    })
+    setLoading(true)
+    try {
+      const res = await fetch("/api/checkout_sessions", { method: "POST" })
+      const data = await res.json()
+      if (!res.ok || !data.url) {
+        throw new Error(data.error ?? "Failed to start checkout")
+      }
+      window.location.href = data.url
+    } catch (err) {
+      toast.add({
+        title: "Payment error",
+        description:
+          err instanceof Error ? err.message : "Something went wrong.",
+      })
+      setLoading(false)
+    }
   }
 
   return (
@@ -294,9 +308,10 @@ export function PaymentForm() {
             <button
               type="button"
               onClick={handlePay}
-              className="h-11 w-full rounded-lg bg-[#0073e6] text-sm font-semibold text-white transition-colors hover:bg-[#0064c9]"
+              disabled={loading}
+              className="h-11 w-full rounded-lg bg-[#0073e6] text-sm font-semibold text-white transition-colors hover:bg-[#0064c9] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Pay
+              {loading ? "Redirecting to Stripe…" : "Pay"}
             </button>
           </div>
         </div>

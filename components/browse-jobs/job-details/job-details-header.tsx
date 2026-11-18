@@ -16,6 +16,7 @@ import {
   getMyApplicationsCount,
   hasAppliedToJob,
 } from "@/lib/actions/applications"
+import { getUserPremiumById } from "@/lib/actions/user"
 
 export function JobDetailsHeader({ job }: { job: JobDetails }) {
   const { isSaved, toggle } = useSavedJobs()
@@ -31,7 +32,6 @@ export function JobDetailsHeader({ job }: { job: JobDetails }) {
   // each time the details page is opened again.
   useEffect(() => {
     if (!user || user.role !== "seeker") return
-
     let cancelled = false
 
     hasAppliedToJob(job._id, user.id)
@@ -55,7 +55,6 @@ export function JobDetailsHeader({ job }: { job: JobDetails }) {
     }
 
     if (user.role !== "seeker") {
-      console.log("User Is not a Seeker")
       toast.add({
         title: "Only job seekers can apply",
         description: "You are signed in as a recruiter.",
@@ -63,6 +62,8 @@ export function JobDetailsHeader({ job }: { job: JobDetails }) {
       return
     }
 
+    // Set the pending state before the first await so a double click cannot
+    // submit the same application twice while premium status is loading.
     setApplying(true)
     try {
       const application = {
@@ -76,8 +77,13 @@ export function JobDetailsHeader({ job }: { job: JobDetails }) {
         isRemote: job.isRemote,
         location: job.location,
       }
-      const countRes = await getMyApplicationsCount(user.id)
-      if (countRes.count >= 5) {
+      const [premiumResult, countRes] = await Promise.all([
+        getUserPremiumById(user.id),
+        getMyApplicationsCount(user.id),
+      ])
+
+      // Premium seekers skip the free-application limit entirely.
+      if (!premiumResult.premium && countRes.count >= 5) {
         toast.add({
           title: "Free applications limit reached",
           description:
@@ -85,15 +91,15 @@ export function JobDetailsHeader({ job }: { job: JobDetails }) {
         })
         router.push("/payment")
         return
-      } else {
-        const res = await applyToAJob(application)
-        if (res.insertedId) {
-          setApplied(true)
+      }
 
-          setTimeout(() => {
-            router.push("/browse-jobs")
-          }, 500)
-        }
+      const res = await applyToAJob(application)
+      if (res.insertedId) {
+        setApplied(true)
+
+        setTimeout(() => {
+          router.push("/browse-jobs")
+        }, 500)
       }
     } catch (err) {
       toast.add({
