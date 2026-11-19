@@ -13,6 +13,8 @@ import {
   Users,
 } from "lucide-react"
 
+import { useSession } from "@/lib/auth-client"
+import { getJobApplicationsCount } from "@/lib/actions/applications"
 import { DeleteJob, GetJobs } from "@/lib/actions/jobs"
 import type { Job } from "@/lib/types/jobs"
 import { PageHeader } from "@/components/dashboard/page-header"
@@ -60,9 +62,26 @@ function formatSalary(min: string, max: string, frequency: string) {
   return `${range} ${frequency}`
 }
 
+async function loadApplicantCounts(list: Job[]) {
+  const entries = await Promise.all(
+    list.map(async (job) => {
+      const count = await getJobApplicationsCount(job._id).catch(() => ({
+        count: 0,
+      }))
+      return [job._id, count.count] as const
+    })
+  )
+  return Object.fromEntries(entries) as Record<string, number>
+}
+
 const ManageJobsPage = () => {
   const router = useRouter()
+  const { data: session, isPending: sessionLoading } = useSession()
+  const recruiterId = session?.user.id
   const [jobs, setJobs] = useState<Job[]>([])
+  const [applicantCounts, setApplicantCounts] = useState<Record<string, number>>(
+    {}
+  )
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -74,12 +93,18 @@ const ManageJobsPage = () => {
   // View details dialog state
   const [viewJob, setViewJob] = useState<Job | null>(null)
 
-  async function fetchJobs() {
-    try {
-      const data = await GetJobs()
+  // Never render jobs (or a loading spinner) without a signed-in recruiter.
+  const visibleJobs = recruiterId ? jobs : []
+  const isLoading = loading && (sessionLoading || Boolean(recruiterId))
 
-      setJobs((Array.isArray(data) ? data : []) as Job[])
+  async function fetchJobs(id: string) {
+    try {
+      const data = await GetJobs(`recruiterId=${encodeURIComponent(id)}`)
+      const list = (Array.isArray(data) ? data : []) as Job[]
+
+      setJobs(list)
       setError(null)
+      setApplicantCounts(await loadApplicantCounts(list))
     } catch (err) {
       console.error(err)
       setError("Failed to load jobs. Make sure the backend is running.")
@@ -89,15 +114,26 @@ const ManageJobsPage = () => {
   }
 
   useEffect(() => {
+    // Wait for the session before deciding which jobs to request.
+    if (sessionLoading) return
+
+    if (!recruiterId) {
+      // No signed-in recruiter: never fall back to the unfiltered job list.
+      return
+    }
+    const id: string = recruiterId
+
     let ignore = false
 
     async function load() {
       try {
-        const data = await GetJobs()
+        const data = await GetJobs(`recruiterId=${encodeURIComponent(id)}`)
 
         if (!ignore) {
-          setJobs((Array.isArray(data) ? data : []) as Job[])
+          const list = (Array.isArray(data) ? data : []) as Job[]
+          setJobs(list)
           setError(null)
+          setApplicantCounts(await loadApplicantCounts(list))
         }
       } catch (err) {
         if (!ignore) {
@@ -114,12 +150,14 @@ const ManageJobsPage = () => {
     return () => {
       ignore = true
     }
-  }, [])
+  }, [recruiterId, sessionLoading])
 
   async function handleRetry() {
+    if (!recruiterId) return
+
     setLoading(true)
     setError(null)
-    await fetchJobs()
+    await fetchJobs(recruiterId)
   }
 
   // Open confirmation dialog
@@ -130,13 +168,13 @@ const ManageJobsPage = () => {
 
   // Confirm and delete selected job
   async function confirmDelete() {
-    if (!selectedJob || deleting) return
+    if (!selectedJob || deleting || !recruiterId) return
 
     setDeleting(true)
     setError(null)
 
     try {
-      await DeleteJob(selectedJob._id)
+      await DeleteJob(selectedJob._id, recruiterId)
 
       setJobs((prev) => prev.filter((job) => job._id !== selectedJob._id))
 
@@ -154,7 +192,10 @@ const ManageJobsPage = () => {
     <div className="space-y-6">
       {/* Header */}
       <PageHeader
-        crumbs={[{ label: "Manage Jobs", href: "/dashboard/recruiter/jobs" }, { label: "Active Listings" }]}
+        crumbs={[
+          { label: "Manage Jobs", href: "/dashboard/recruiter/jobs" },
+          { label: "Active Listings" },
+        ]}
         title="Manage Job Posts"
         description="Review, update, or archive job listings and update details across your organization."
         action={
@@ -206,13 +247,13 @@ const ManageJobsPage = () => {
           </TableHeader>
 
           <TableBody>
-            {loading ? (
+            {isLoading ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-10 text-center">
                   <div className="mx-auto size-6 animate-spin rounded-full border-2 border-muted-foreground border-t-transparent" />
                 </TableCell>
               </TableRow>
-            ) : jobs.length === 0 ? (
+            ) : visibleJobs.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={8} className="py-10 text-center">
                   <p className="text-sm text-muted-foreground">
@@ -228,7 +269,7 @@ const ManageJobsPage = () => {
                 </TableCell>
               </TableRow>
             ) : (
-              jobs.map((job) => {
+              visibleJobs.map((job) => {
                 const isClosed =
                   job.deadline && new Date(job.deadline) < new Date()
 
@@ -283,10 +324,14 @@ const ManageJobsPage = () => {
 
                     {/* Applicants */}
                     <TableCell className="hidden lg:table-cell">
-                      <p className="flex items-center gap-1.5 text-sm">
-                        <Users className="size-3.5 text-muted-foreground" />0
-                        Applicants
-                      </p>
+                      <Link
+                        href={`/dashboard/recruiter/jobs/${job._id}/applications`}
+                        title="Review applicants"
+                        className="flex items-center gap-1.5 text-sm hover:underline"
+                      >
+                        <Users className="size-3.5 text-muted-foreground" />
+                        {applicantCounts[job._id] ?? 0} Applicants
+                      </Link>
                     </TableCell>
 
                     {/* Status */}
@@ -319,6 +364,17 @@ const ManageJobsPage = () => {
                         >
                           <Eye className="size-3.5 text-muted-foreground" />
                         </Button>
+
+                        <Link
+                          href={`/dashboard/recruiter/jobs/${job._id}/applications`}
+                          title="Review applicants"
+                          className={buttonVariants({
+                            variant: "ghost",
+                            size: "icon-sm",
+                          })}
+                        >
+                          <Users className="size-3.5 text-muted-foreground" />
+                        </Link>
 
                         <Link
                           href={`/dashboard/recruiter/jobs/new?edit=${job._id}`}
@@ -476,7 +532,8 @@ const ManageJobsPage = () => {
                 <p className="flex items-center gap-1.5 font-medium">
                   <span
                     className={
-                      viewJob.deadline && new Date(viewJob.deadline) < new Date()
+                      viewJob.deadline &&
+                      new Date(viewJob.deadline) < new Date()
                         ? "size-2 rounded-full bg-muted-foreground"
                         : "size-2 rounded-full bg-emerald-500"
                     }
@@ -491,9 +548,7 @@ const ManageJobsPage = () => {
                 <p className="text-xs text-muted-foreground">Location</p>
 
                 <p className="truncate font-medium">
-                  {viewJob.isRemote
-                    ? "Remote"
-                    : viewJob.location || "—"}
+                  {viewJob.isRemote ? "Remote" : viewJob.location || "—"}
                 </p>
               </div>
             </div>
@@ -505,7 +560,9 @@ const ManageJobsPage = () => {
                 onClick={(e) => {
                   e.preventDefault()
                   setViewJob(null)
-                  router.push(`/dashboard/recruiter/jobs/new?edit=${viewJob._id}`)
+                  router.push(
+                    `/dashboard/recruiter/jobs/new?edit=${viewJob._id}`
+                  )
                 }}
               >
                 <Pencil className="size-4" />

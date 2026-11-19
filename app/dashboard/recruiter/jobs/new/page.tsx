@@ -13,23 +13,13 @@ import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
 
 import type { JobForm } from "@/lib/types/jobs"
-import { JOB_CATEGORIES, JOB_TYPES, SALARY_FREQUENCIES } from "@/lib/constants/jobs"
+import {
+  JOB_CATEGORIES,
+  JOB_TYPES,
+  SALARY_FREQUENCIES,
+} from "@/lib/constants/jobs"
 import { PageHeader } from "@/components/dashboard/page-header"
-
-const initialForm: JobForm = {
-  jobTitle: "",
-  companyName: "",
-  jobCategory: "Engineering & Tech",
-  jobType: "Full-time",
-  isRemote: true,
-  location: "",
-  deadline: "",
-  minSalary: "",
-  maxSalary: "",
-  salaryFrequency: "per hour",
-  responsibilities: "",
-  qualifications: "",
-}
+import { useSession } from "@/lib/auth-client"
 
 const inputStyles = "h-9 bg-input/40"
 const sectionTitleStyles =
@@ -59,6 +49,22 @@ function Section({
 }
 
 const NewJobsPage = () => {
+  const { data: session } = useSession()
+  const initialForm: JobForm = {
+    jobTitle: "",
+    companyName: "",
+    recruiterId: session?.user.id ?? "",
+    jobCategory: "Engineering & Tech",
+    jobType: "Full-time",
+    isRemote: true,
+    location: "",
+    deadline: "",
+    minSalary: "",
+    maxSalary: "",
+    salaryFrequency: "per hour",
+    responsibilities: "",
+    qualifications: "",
+  }
   const [form, setForm] = useState<JobForm>(initialForm)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)

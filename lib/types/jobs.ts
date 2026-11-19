@@ -6,6 +6,8 @@
 export type JobForm = {
   jobTitle: string
   companyName: string
+  companyId?: string
+  recruiterId: string
   jobCategory: string
   jobType: string
   isRemote: boolean

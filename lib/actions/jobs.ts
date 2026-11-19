@@ -74,15 +74,12 @@ export const GetJobDetails = async (id: string): Promise<JobDetails> => {
   return res.json()
 }
 
-export const DeleteJob = async (id: string) => {
+export const DeleteJob = async (id: string, recruiterId: string) => {
+  const query = `?recruiterId=${encodeURIComponent(recruiterId)}`
+
   let res: Response
   try {
-    res = await fetch(`${BASE_URL}/jobs/${id}`, { method: "DELETE" })
-    const time = new Date().toDateString()
-    toast.add({
-      title: "Job Deleted",
-      description: `${time}`,
-    })
+    res = await fetch(`${BASE_URL}/jobs/${id}${query}`, { method: "DELETE" })
   } catch {
     throw new Error(`Cannot reach backend at ${BASE_URL}/jobs/${id}`)
   }
@@ -90,6 +87,11 @@ export const DeleteJob = async (id: string) => {
   if (!res.ok) {
     throw new Error(`Backend responded with ${res.status} ${res.statusText}`)
   }
+
+  toast.add({
+    title: "Job Deleted",
+    description: `${new Date().toDateString()}`,
+  })
 
   return res.json()
 }

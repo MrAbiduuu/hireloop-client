@@ -22,6 +22,12 @@ export const auth = betterAuth({
       phone: { type: "string", required: false, input: true },
       skills: { type: "string[]", required: false, input: true },
       resumeName: { type: "string", required: false, input: true },
+      // Recruiter profile fields. Optional so existing accounts keep working.
+      companyName: { type: "string", required: false, input: true },
+      companyWebsite: { type: "string", required: false, input: true },
+      companySize: { type: "string", required: false, input: true },
+      industry: { type: "string", required: false, input: true },
+      hiringFocus: { type: "string[]", required: false, input: true },
     },
   },
   socialProviders: {
