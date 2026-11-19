@@ -4,7 +4,7 @@ type PremiumResponse = {
   premium?: boolean
   // Legacy typo written by the old backend; kept for already-upgraded users.
   permium?: boolean
-}
+} 
 
 export const getUserPremiumById = async (
   userId: string
